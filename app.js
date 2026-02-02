@@ -323,52 +323,81 @@ function register() {
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     
+    // Loading state
+    const button = document.getElementById('buttonGoogleLogin');
+    const originalText = button ? button.innerHTML : '';
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<span>Yükleniyor...</span>';
+    }
+    
     getAuth().signInWithPopup(provider)
         .then(result => {
             const user = result.user;
             
             // Firestore'a kullanıcı bilgisi ekle (varsa güncelle)
-            getDb().collection('users').doc(user.uid).set({
+            return getDb().collection('users').doc(user.uid).set({
                 name: user.displayName || 'Kullanıcı',
                 email: user.email,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            
-            console.log('Google giriş başarılı:', user.email);
+            }, { merge: true }).then(() => {
+                console.log('Google giriş başarılı:', user.email);
+                showToast('Google ile giriş başarılı!', 'success');
+            });
         })
         .catch(error => {
             console.error('Google giriş hatası:', error);
             
+            // Button'u eski haline getir
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+            
             // Popup engellenmişse redirect dene
-            if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+            if (error.code === 'auth/popup-blocked') {
+                showToast('Popup engellendi! Lütfen popup engelleyicileri kapatıp tekrar deneyin.', 'error');
+                // Redirect ile dene
                 getAuth().signInWithRedirect(provider)
                     .catch(redirectError => {
                         console.error('Redirect hatası:', redirectError);
-                        showError('Google giriş başarısız! Lütfen popup engelleyicileri kapatıp tekrar deneyin.');
+                        showToast('Google giriş başarısız! Lütfen popup engelleyicileri kapatıp tekrar deneyin.', 'error');
                     });
+            } else if (error.code === 'auth/popup-closed-by-user') {
+                showToast('Giriş iptal edildi.', 'info');
             } else if (error.code === 'auth/operation-not-allowed') {
-                showError('Google ile giriş Firebase Console\'da etkinleştirilmemiş.');
+                showToast('Google ile giriş Firebase Console\'da etkinleştirilmemiş. Lütfen Firebase Console\'dan etkinleştirin.', 'error');
+            } else if (error.code === 'auth/network-request-failed') {
+                showToast('İnternet bağlantınızı kontrol edin.', 'error');
             } else {
-                showError('Google giriş başarısız: ' + (error.message || 'Bilinmeyen hata'));
+                showToast('Google giriş başarısız: ' + (error.message || 'Bilinmeyen hata'), 'error');
             }
         });
 }
 
-// Redirect sonucunu kontrol et
-getAuth().getRedirectResult()
-    .then(result => {
-        if (result.user) {
-            const user = result.user;
-            getDb().collection('users').doc(user.uid).set({
-                name: user.displayName || 'Kullanıcı',
-                email: user.email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        }
-    })
-    .catch(error => {
-        console.error('Redirect sonuç hatası:', error);
-    });
+// Redirect sonucunu kontrol et (sayfa yüklendiğinde)
+if (typeof getAuth !== 'undefined') {
+    getAuth().getRedirectResult()
+        .then(result => {
+            if (result.user) {
+                const user = result.user;
+                getDb().collection('users').doc(user.uid).set({
+                    name: user.displayName || 'Kullanıcı',
+                    email: user.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).then(() => {
+                    console.log('Google redirect giriş başarılı:', user.email);
+                    showToast('Google ile giriş başarılı!', 'success');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Redirect sonuç hatası:', error);
+            if (error.code !== 'auth/operation-not-allowed') {
+                showToast('Google giriş hatası: ' + error.message, 'error');
+            }
+        });
+}
 
 // Çıkış Yap
 function logout() {
