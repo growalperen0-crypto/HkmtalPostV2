@@ -1,0 +1,15 @@
+{
+  "name": "okul-sosyal-medya",
+  "version": "1.0.0",
+  "description": "Okul Mini Sosyal Medya Uygulaması",
+  "scripts": {
+    "start": "npx http-server -p 8000"
+  },
+  "keywords": [
+    "firebase",
+    "social-media",
+    "web-app"
+  ],
+  "author": "",
+  "license": "MIT"
+}
