@@ -3,23 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Okul Sosyal Medya</title>
+    <title>OkulFeed - Okul Sosyal Medya</title>
     <link rel="icon" href="data:,">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDK v8 (Modül gerektirmeyen versiyon) -->
+    
+    <!-- Firebase SDK v8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 </head>
 <body>
     <!-- Giriş Ekranı -->
     <div id="loginContainer" class="container show">
         <div class="login-box">
-            <h1>Okul Sosyal Medya</h1>
-            <p class="subtitle">Hoş Geldiniz</p>
+            <div class="login-header">
+                <h1>OkulFeed</h1>
+                <p class="subtitle">Okul topluluğuna katıl</p>
+            </div>
             
             <div class="form-group">
-                <input type="email" id="loginEmail" placeholder="E-mail adresiniz" required>
+                <input type="email" id="loginEmail" placeholder="E-posta adresiniz" required>
             </div>
             
             <div class="form-group">
@@ -43,19 +53,21 @@
     <!-- Kayıt Ekranı -->
     <div id="registerContainer" class="container">
         <div class="login-box">
-            <h1>Okul Sosyal Medya</h1>
-            <p class="subtitle">Hesap Oluştur</p>
+            <div class="login-header">
+                <h1>OkulFeed</h1>
+                <p class="subtitle">Hesap oluştur</p>
+            </div>
             
             <div class="form-group">
                 <input type="text" id="registerName" placeholder="Adınız Soyadınız" required>
             </div>
             
             <div class="form-group">
-                <input type="email" id="registerEmail" placeholder="E-mail adresiniz" required>
+                <input type="email" id="registerEmail" placeholder="E-posta adresiniz" required>
             </div>
             
             <div class="form-group">
-                <input type="password" id="registerPassword" placeholder="Şifre" required>
+                <input type="password" id="registerPassword" placeholder="Şifre (min. 6 karakter)" required>
             </div>
             
             <button class="btn btn-primary" id="buttonRegister">Kayıt Ol</button>
@@ -68,32 +80,229 @@
 
     <!-- Ana Uygulama Ekranı -->
     <div id="appContainer" class="container">
+        <!-- Modern Navbar -->
         <nav class="navbar">
-            <div class="navbar-brand">
-                <h2>Okul Sosyal Medya</h2>
+            <div class="navbar-left">
+                <div class="navbar-brand" onclick="showFeed()">
+                    <span class="brand-icon">📚</span>
+                    <span class="brand-text">OkulFeed</span>
+                </div>
+                <div class="navbar-search">
+                    <input type="text" id="globalSearch" placeholder="Kullanıcı veya gönderi ara..." onkeyup="handleGlobalSearch(event)">
+                </div>
             </div>
-            <div class="navbar-menu">
-                <span id="userName"></span>
-                <button class="btn btn-small" id="buttonLogout">Çıkış</button>
+            <div class="navbar-right">
+                <button class="navbar-icon-btn" onclick="showFeed()" title="Ana Sayfa">
+                    🏠
+                </button>
+                <button class="navbar-icon-btn" onclick="showNotifications()" title="Bildirimler" id="notificationBtn">
+                    🔔
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                <button class="navbar-icon-btn" onclick="toggleDarkMode()" title="Dark Mode" id="darkModeBtn">
+                    🌙
+                </button>
+                <div class="navbar-user" onclick="showProfile()">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <span class="user-name" id="userNameNav">Kullanıcı</span>
+                </div>
+                <button class="btn btn-small btn-outline" id="buttonLogout">Çıkış</button>
             </div>
         </nav>
 
-        <div class="app-content">
-            <!-- Yeni Gönderi Oluştur -->
-            <div class="post-creator">
-                <h3>Yeni Gönderi Oluştur</h3>
-                <div class="creator-form">
-                    <textarea id="postContent" placeholder="Ne düşünüyorsunuz?" maxlength="500"></textarea>
-                    <button class="btn btn-primary" id="buttonShare">Paylaş</button>
+        <!-- Ana İçerik -->
+        <div class="app-wrapper">
+            <!-- Sol Sidebar (Mobilde gizli) -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-menu">
+                    <button class="sidebar-item active" onclick="showFeed()" id="menuFeed">
+                        <span>🏠</span>
+                        <span>Ana Sayfa</span>
+                    </button>
+                    <button class="sidebar-item" onclick="showProfile()" id="menuProfile">
+                        <span>👤</span>
+                        <span>Profil</span>
+                    </button>
+                    <button class="sidebar-item" onclick="showFriends()" id="menuFriends">
+                        <span>👥</span>
+                        <span>Takipçiler</span>
+                    </button>
+                    <button class="sidebar-item" onclick="showChat()" id="menuChat">
+                        <span>💬</span>
+                        <span>Mesajlar</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Ana İçerik Alanı -->
+            <main class="main-content" id="mainContent">
+                <!-- Feed Sekmeleri -->
+                <div class="feed-tabs">
+                    <button class="tab-btn active" onclick="showRecentPosts()" id="tabRecent">Son Gönderiler</button>
+                    <button class="tab-btn" onclick="showPopularPosts()" id="tabPopular">Popüler</button>
+                </div>
+
+                <!-- Post Oluşturma Kartı -->
+                <div class="post-creator-card">
+                    <div class="creator-header">
+                        <div class="user-avatar-small" id="creatorAvatar">U</div>
+                        <div class="creator-info">
+                            <strong id="creatorName">Kullanıcı</strong>
+                            <span>Ne paylaşmak istersin?</span>
+                        </div>
+                    </div>
+                    <div class="creator-form">
+                        <textarea id="postContent" placeholder="Ne düşünüyorsunuz? #hashtag kullanabilirsiniz..." maxlength="500" oninput="updateCharCount()"></textarea>
+                        <div class="char-count" id="charCount">0/500</div>
+                        <div id="imagePreview" class="image-preview" style="display: none;">
+                            <img id="previewImage" src="" alt="Önizleme">
+                            <button class="remove-image" onclick="removeImagePreview()">×</button>
+                        </div>
+                        <div class="creator-actions">
+                            <div class="action-buttons">
+                                <label for="postImageInput" class="action-btn">
+                                    📷 Fotoğraf
+                                    <input type="file" id="postImageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+                                </label>
+                                <button class="action-btn" onclick="openEmojiPicker()">😊 Emoji</button>
+                            </div>
+                            <button class="btn btn-primary" id="buttonShare" onclick="createPost()">
+                                Paylaş
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gönderiler Listesi -->
+                <div id="postsList" class="posts-list">
+                    <div class="skeleton-post">
+                        <div class="skeleton-avatar"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-post">
+                        <div class="skeleton-avatar"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Sağ Sidebar (Öneriler) -->
+            <aside class="right-sidebar" id="rightSidebar">
+                <div class="widget">
+                    <h3>Popüler Hashtag'ler</h3>
+                    <div id="popularHashtags" class="hashtag-list"></div>
+                </div>
+                <div class="widget">
+                    <h3>Önerilen Kullanıcılar</h3>
+                    <div id="suggestedUsers" class="suggested-users"></div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Profil Sayfası -->
+        <div id="profileContent" class="app-content" style="display: none;">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <div class="profile-avatar-large" id="profileAvatarLarge">U</div>
+                    <div class="profile-info">
+                        <h2 id="profileName">Kullanıcı Adı</h2>
+                        <p id="profileBio" class="profile-bio">Bio buraya gelecek</p>
+                        <div class="profile-stats">
+                            <div class="stat-item">
+                                <strong id="profilePostCount">0</strong>
+                                <span>Gönderi</span>
+                            </div>
+                            <div class="stat-item">
+                                <strong id="profileFollowerCount">0</strong>
+                                <span>Takipçi</span>
+                            </div>
+                            <div class="stat-item">
+                                <strong id="profileFollowingCount">0</strong>
+                                <span>Takip</span>
+                            </div>
+                        </div>
+                        <div class="profile-actions">
+                            <button class="btn btn-primary" id="profileFollowBtn" onclick="toggleFollow()" style="display: none;">Takip Et</button>
+                            <button class="btn btn-secondary" id="profileEditBtn" onclick="editProfile()" style="display: none;">Profili Düzenle</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-posts">
+                    <h3>Gönderiler</h3>
+                    <div id="profilePostsList" class="posts-list"></div>
                 </div>
             </div>
+        </div>
 
-            <!-- Gönderiler Listesi -->
-            <div id="postsList" class="posts-list">
-                <p class="loading">Gönderiler yükleniyor...</p>
+        <!-- Arkadaşlar/Takipçiler Ekranı -->
+        <div id="friendsContent" class="app-content" style="display: none;">
+            <div class="friends-container">
+                <h2>Takipçiler</h2>
+                <div class="friends-tabs">
+                    <button class="tab-btn active" onclick="showFollowers()" id="tabFollowers">Takipçiler</button>
+                    <button class="tab-btn" onclick="showFollowing()" id="tabFollowing">Takip Edilenler</button>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="searchUsers" placeholder="Kullanıcı ara..." onkeyup="searchUsers()">
+                </div>
+                <div id="usersList" class="users-list"></div>
+                <div id="friendsList" class="friends-list"></div>
+            </div>
+        </div>
+
+        <!-- Chat Ekranı -->
+        <div id="chatContent" class="app-content" style="display: none;">
+            <div class="chat-container">
+                <div class="chat-sidebar">
+                    <h3>Mesajlar</h3>
+                    <div id="chatList" class="chat-list"></div>
+                </div>
+                <div class="chat-main">
+                    <div id="chatHeader" class="chat-header">
+                        <p>Bir konuşma seçin</p>
+                    </div>
+                    <div id="chatMessages" class="chat-messages"></div>
+                    <div id="chatInputContainer" class="chat-input-container" style="display: none;">
+                        <input type="text" id="chatInput" placeholder="Mesaj yazın..." onkeypress="handleChatKeyPress(event)">
+                        <button class="btn btn-primary" id="buttonSendMessage" onclick="sendMessage()">Gönder</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal'lar -->
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal()" style="display: none;">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">Başlık</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Modal içeriği buraya gelecek -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bildirim Dropdown -->
+    <div id="notificationDropdown" class="notification-dropdown" style="display: none;">
+        <div class="dropdown-header">
+            <h3>Bildirimler</h3>
+            <button onclick="markAllNotificationsRead()">Tümünü okundu işaretle</button>
+        </div>
+        <div id="notificationsList" class="notifications-list">
+            <p class="loading">Bildirim yok</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <script src="config.js"></script>
     <script src="app.js"></script>

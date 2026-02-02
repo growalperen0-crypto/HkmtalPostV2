@@ -14,8 +14,10 @@ const firebaseConfig = {
 // Firebase'i başlat
 firebase.initializeApp(firebaseConfig);
 
-// Auth ve Firestore referanslarını al (window'a da ekle)
+// Auth, Firestore ve Storage referanslarını al (window'a da ekle)
 window.auth = firebase.auth();
 window.db = firebase.firestore();
+window.storage = firebase.storage();
 const auth = window.auth;
 const db = window.db;
+const storage = window.storage;
