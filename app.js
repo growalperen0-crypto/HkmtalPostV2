@@ -525,22 +525,36 @@ function createPost() {
     // Önce fotoğraf varsa yükle
     if (selectedImageFile) {
         const fileName = `posts/${currentUser.uid}/${Date.now()}_${selectedImageFile.name}`;
-        const uploadTask = getStorage().ref(fileName).put(selectedImageFile);
+        const storageRef = getStorage().ref(fileName);
+        const uploadTask = storageRef.put(selectedImageFile);
         
         uploadTask.on('state_changed',
             (snapshot) => {
                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                buttonShare.textContent = `Yükleniyor... ${Math.round(progress)}%`;
+                if (buttonShare) {
+                    buttonShare.textContent = `Yükleniyor... ${Math.round(progress)}%`;
+                }
             },
             (error) => {
                 console.error('Fotoğraf yükleme hatası:', error);
-                showToast('Fotoğraf yüklenemedi!', 'error');
-                buttonShare.disabled = false;
-                buttonShare.textContent = 'Paylaş';
+                showToast('Fotoğraf yüklenemedi! ' + (error.message || 'Bilinmeyen hata'), 'error');
+                if (buttonShare) {
+                    buttonShare.disabled = false;
+                    buttonShare.textContent = 'Paylaş';
+                }
             },
             () => {
+                // Upload başarılı
                 uploadTask.snapshot.ref.getDownloadURL().then(imageUrl => {
+                    console.log('Fotoğraf yüklendi:', imageUrl);
                     savePostToFirestore(content, imageUrl);
+                }).catch(error => {
+                    console.error('Download URL alma hatası:', error);
+                    showToast('Fotoğraf URL alınamadı!', 'error');
+                    if (buttonShare) {
+                        buttonShare.disabled = false;
+                        buttonShare.textContent = 'Paylaş';
+                    }
                 });
             }
         );
@@ -761,7 +775,19 @@ function getAvatarColor(userId) {
 // Beğeni Aç/Kapat (Animasyonlu)
 function toggleLike(postId, isCurrentlyLiked) {
     const postRef = getDb().collection('posts').doc(postId);
-    const likeButton = event.target.closest('.post-action');
+    
+    // Butonu bul (event global olmayabilir)
+    let likeButton = null;
+    if (typeof event !== 'undefined' && event.target) {
+        likeButton = event.target.closest('.post-action');
+    } else {
+        // Alternatif: postId'ye göre butonu bul
+        const postElement = document.querySelector(`[data-post-id="${postId}"]`) || 
+                           document.querySelector(`.post-card:has([onclick*="${postId}"])`);
+        if (postElement) {
+            likeButton = postElement.querySelector('.post-action');
+        }
+    }
     
     if (isCurrentlyLiked) {
         // Beğeniyi kaldır
@@ -769,9 +795,12 @@ function toggleLike(postId, isCurrentlyLiked) {
             likeCount: firebase.firestore.FieldValue.increment(-1),
             likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
         })
+        .then(() => {
+            if (likeButton) likeButton.classList.remove('liked');
+        })
         .catch(error => {
             console.error('Beğeni kaldırma hatası:', error);
-            showToast('Beğeni kaldırılamadı!', 'error');
+            showToast('Beğeni kaldırılamadı! ' + error.message, 'error');
         });
     } else {
         // Beğen - Animasyon ekle
@@ -786,15 +815,19 @@ function toggleLike(postId, isCurrentlyLiked) {
             getDb().collection('posts').doc(postId).get().then(doc => {
                 const post = doc.data();
                 if (post && post.userId !== currentUser.uid) {
-                    const userName = currentUser.displayName || currentUser.email;
-                    createNotification(post.userId, 'like', postId, userName);
+                    getDb().collection('users').doc(currentUser.uid).get().then(userDoc => {
+                        const user = userDoc.exists ? userDoc.data() : null;
+                        const userName = user ? (user.name || currentUser.displayName || currentUser.email) : 
+                                        (currentUser.displayName || currentUser.email);
+                        createNotification(post.userId, 'like', postId, userName);
+                    });
                 }
             });
         })
         .catch(error => {
             console.error('Beğeni ekleme hatası:', error);
             if (likeButton) likeButton.classList.remove('liked');
-            showToast('Beğenilemedi! Firestore kurallarını kontrol edin.', 'error');
+            showToast('Beğenilemedi! ' + error.message, 'error');
         });
     }
 }
@@ -1504,6 +1537,10 @@ function showProfile(userId = null) {
 }
 
 function showUserProfile(userId) {
+    // Profil görüntüleme bildirimi gönder (kendisi değilse)
+    if (userId !== currentUser.uid) {
+        createNotification(userId, 'profile_view', null, null);
+    }
     showProfile(userId);
 }
 
@@ -1702,14 +1739,23 @@ function checkFollowStatus(userId) {
 
 // Bildirim Sistemi
 function createNotification(userId, type, postId, fromUserName) {
-    getDb().collection('users').doc(userId).collection('notifications').add({
+    // Kendine bildirim gönderme
+    if (userId === currentUser.uid) return;
+    
+    const notificationData = {
         type: type,
-        postId: postId,
-        fromUserName: fromUserName,
-        fromUserId: currentUser.uid,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    
+    if (postId) notificationData.postId = postId;
+    if (fromUserName) notificationData.fromUserName = fromUserName;
+    if (currentUser.uid) notificationData.fromUserId = currentUser.uid;
+    
+    getDb().collection('users').doc(userId).collection('notifications').add(notificationData)
+        .catch(error => {
+            console.error('Bildirim oluşturma hatası:', error);
+        });
 }
 
 function showNotifications() {
@@ -1756,13 +1802,15 @@ function createNotificationElement(notif, notifId) {
     const icons = {
         like: '❤️',
         comment: '💬',
-        follow: '👥'
+        follow: '👥',
+        profile_view: '👁️'
     };
     
     const messages = {
-        like: `${notif.fromUserName} gönderinizi beğendi`,
-        comment: `${notif.fromUserName} gönderinize yorum yaptı`,
-        follow: `${notif.fromUserName} sizi takip etmeye başladı`
+        like: `${notif.fromUserName || 'Birisi'} gönderinizi beğendi`,
+        comment: `${notif.fromUserName || 'Birisi'} gönderinize yorum yaptı`,
+        follow: `${notif.fromUserName || 'Birisi'} sizi takip etmeye başladı`,
+        profile_view: `${notif.fromUserName || 'Birisi'} profilinizi görüntüledi`
     };
     
     const time = notif.createdAt ? formatDate(notif.createdAt.toDate()) : 'Az önce';
@@ -2115,6 +2163,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Mobil Menü Toggle
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('mobileSidebar');
+    const overlay = document.getElementById('mobileSidebarOverlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+        
+        // Body scroll'u engelle
+        if (sidebar.classList.contains('open')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+}
 
 // Sayfa yüklendiğinde yan özellikleri yükle
 setTimeout(() => {

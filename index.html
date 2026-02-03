@@ -2,7 +2,10 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>OkulFeed - Okul Sosyal Medya</title>
     <link rel="icon" href="data:,">
     
@@ -83,6 +86,7 @@
         <!-- Modern Navbar -->
         <nav class="navbar">
             <div class="navbar-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()" style="display: none;">☰</button>
                 <div class="navbar-brand" onclick="showFeed()">
                     <span class="brand-icon">📚</span>
                     <span class="brand-text">OkulFeed</span>
@@ -109,6 +113,31 @@
                 <button class="btn btn-small btn-outline" id="buttonLogout">Çıkış</button>
             </div>
         </nav>
+
+        <!-- Mobil Sidebar Overlay -->
+        <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay" onclick="toggleMobileMenu()"></div>
+        
+        <!-- Mobil Sidebar -->
+        <aside class="mobile-sidebar" id="mobileSidebar">
+            <div class="sidebar-menu">
+                <button class="sidebar-item active" onclick="showFeed(); toggleMobileMenu();" id="mobileMenuFeed">
+                    <span>🏠</span>
+                    <span>Ana Sayfa</span>
+                </button>
+                <button class="sidebar-item" onclick="showProfile(); toggleMobileMenu();" id="mobileMenuProfile">
+                    <span>👤</span>
+                    <span>Profil</span>
+                </button>
+                <button class="sidebar-item" onclick="showFriends(); toggleMobileMenu();" id="mobileMenuFriends">
+                    <span>👥</span>
+                    <span>Takipçiler</span>
+                </button>
+                <button class="sidebar-item" onclick="showChat(); toggleMobileMenu();" id="mobileMenuChat">
+                    <span>💬</span>
+                    <span>Mesajlar</span>
+                </button>
+            </div>
+        </aside>
 
         <!-- Ana İçerik -->
         <div class="app-wrapper">
@@ -228,7 +257,13 @@
                             </div>
                         </div>
                         <div class="profile-actions">
-                            <button class="btn btn-primary" id="profileFollowBtn" onclick="toggleFollow()" style="display: none;">Takip Et</button>
+                            <button class="btn btn-primary" id="profileFollowBtn" onclick="sendFollowRequest()" style="display: none;">Takip Et</button>
+                            <button class="btn btn-secondary" id="profileUnfollowBtn" onclick="unfollow()" style="display: none;">Takibi Bırak</button>
+                            <button class="btn btn-outline" id="profileRequestSentBtn" onclick="cancelFollowRequest()" style="display: none;">İstek Gönderildi</button>
+                            <button class="btn btn-primary" id="profileAcceptBtn" onclick="acceptFollowRequest()" style="display: none;">İsteği Kabul Et</button>
+                            <button class="btn btn-secondary" id="profileRejectBtn" onclick="rejectFollowRequest()" style="display: none;">Reddet</button>
+                            <button class="btn btn-outline" id="profileBlockBtn" onclick="blockUser()" style="display: none;">Engelle</button>
+                            <button class="btn btn-secondary" id="profileUnblockBtn" onclick="unblockUser()" style="display: none;">Engeli Kaldır</button>
                             <button class="btn btn-secondary" id="profileEditBtn" onclick="editProfile()" style="display: none;">Profili Düzenle</button>
                         </div>
                     </div>

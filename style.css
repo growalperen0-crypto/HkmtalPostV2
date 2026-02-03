@@ -42,6 +42,16 @@ body {
     color: var(--text-dark);
     line-height: 1.6;
     transition: var(--transition);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Text seçilebilir alanlar */
+input, textarea, .post-content, .comment-text {
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 /* ==================== CONTAINER SYSTEM ==================== */
@@ -373,6 +383,14 @@ body {
     width: 100%;
     padding: 24px;
     gap: 24px;
+}
+
+/* Mobil için varsayılan */
+@media (max-width: 768px) {
+    .app-wrapper {
+        padding: 8px;
+        gap: 12px;
+    }
 }
 
 .sidebar {
@@ -1277,49 +1295,499 @@ body {
     }
 }
 
+/* ==================== MOBILE MENU ==================== */
+
+.mobile-menu-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    color: var(--text-dark);
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.mobile-menu-btn:active {
+    background: var(--background);
+}
+
+.mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100vh;
+    background: var(--card);
+    z-index: 10000;
+    box-shadow: var(--shadow-lg);
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    padding-top: 60px;
+}
+
+.mobile-sidebar.open {
+    left: 0;
+}
+
+.mobile-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: none;
+}
+
+.mobile-sidebar-overlay.show {
+    display: block;
+}
+
+.mobile-sidebar .sidebar-menu {
+    position: static;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* ==================== MOBILE FIRST - ANDROID OPTIMIZED ==================== */
+
 @media (max-width: 768px) {
-    .sidebar {
-        display: none;
+    /* Navbar Mobil */
+    .navbar {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+    }
+    
+    .navbar-left {
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .mobile-menu-btn {
+        display: flex !important;
+    }
+    
+    .navbar-brand {
+        font-size: 18px;
+    }
+    
+    .brand-icon {
+        font-size: 20px;
     }
     
     .navbar-search {
         display: none;
     }
     
-    .navbar-left {
-        gap: 12px;
+    .navbar-right {
+        gap: 6px;
+        flex-wrap: wrap;
     }
     
-    .navbar-right {
-        gap: 8px;
+    .navbar-icon-btn {
+        padding: 10px;
+        font-size: 22px;
+        min-width: 44px;
+        min-height: 44px;
     }
     
     .user-name {
         display: none;
     }
     
-    .app-wrapper {
-        padding: 12px;
+    .btn-small {
+        padding: 10px 14px;
+        font-size: 13px;
     }
     
+    /* Layout */
+    .app-wrapper {
+        padding: 8px;
+        gap: 12px;
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        display: none;
+    }
+    
+    .right-sidebar {
+        display: none;
+    }
+    
+    .main-content {
+        width: 100%;
+    }
+    
+    /* Feed Tabs */
+    .feed-tabs {
+        margin-bottom: 16px;
+        padding: 4px;
+    }
+    
+    .tab-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+    
+    /* Post Creator */
     .post-creator-card {
         padding: 16px;
+        margin-bottom: 16px;
+        border-radius: 12px;
     }
     
+    .creator-header {
+        margin-bottom: 12px;
+    }
+    
+    .user-avatar-small {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    
+    .creator-form textarea {
+        min-height: 100px;
+        padding: 14px;
+        font-size: 16px; /* iOS zoom önleme */
+    }
+    
+    .creator-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .action-buttons {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .action-btn {
+        flex: 1;
+        padding: 12px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+    
+    .btn-primary {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        min-height: 48px;
+    }
+    
+    /* Post Cards */
+    .post-card {
+        padding: 16px;
+        margin-bottom: 12px;
+        border-radius: 12px;
+    }
+    
+    .post-header {
+        margin-bottom: 12px;
+    }
+    
+    .post-content {
+        font-size: 15px;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+    
+    .post-image {
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .post-footer {
+        gap: 16px;
+        padding-top: 12px;
+    }
+    
+    .post-action {
+        padding: 12px 16px;
+        font-size: 15px;
+        min-height: 44px;
+    }
+    
+    .like-icon {
+        font-size: 22px;
+    }
+    
+    /* Comments */
+    .comment-input-box {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .comment-input-box input {
+        padding: 12px;
+        font-size: 16px; /* iOS zoom önleme */
+        min-height: 44px;
+    }
+    
+    .comment-input-box .btn {
+        width: 100%;
+        padding: 12px;
+        min-height: 44px;
+    }
+    
+    /* Profile */
     .profile-header {
         flex-direction: column;
         align-items: center;
         text-align: center;
+        padding: 24px 16px;
+    }
+    
+    .profile-avatar-large {
+        width: 100px;
+        height: 100px;
+        font-size: 40px;
+        margin-bottom: 16px;
+    }
+    
+    .profile-info h2 {
+        font-size: 24px;
+    }
+    
+    .profile-bio {
+        font-size: 14px;
+        margin-bottom: 16px;
     }
     
     .profile-stats {
         justify-content: center;
+        gap: 24px;
+        margin-bottom: 16px;
     }
     
+    .stat-item strong {
+        font-size: 20px;
+    }
+    
+    .stat-item span {
+        font-size: 12px;
+    }
+    
+    .profile-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .profile-actions .btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 15px;
+        min-height: 48px;
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: 14px 20px;
+        font-size: 15px;
+        min-height: 48px;
+        touch-action: manipulation;
+    }
+    
+    /* Modal */
+    .modal {
+        width: 95%;
+        max-width: none;
+        margin: 20px;
+    }
+    
+    .modal-header {
+        padding: 16px;
+    }
+    
+    .modal-body {
+        padding: 16px;
+    }
+    
+    /* Notification Dropdown */
     .notification-dropdown {
-        width: calc(100% - 48px);
-        right: 24px;
-        left: 24px;
+        width: calc(100vw - 32px);
+        right: 16px;
+        left: 16px;
+        max-height: 70vh;
+    }
+    
+    .notification-item {
+        padding: 14px 16px;
+    }
+    
+    /* Toast */
+    .toast-container {
+        right: 12px;
+        left: 12px;
+        top: 70px;
+    }
+    
+    .toast {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    /* Login/Register */
+    .login-box {
+        padding: 32px 24px;
+        margin: 16px;
+        max-width: calc(100% - 32px);
+    }
+    
+    .login-header h1 {
+        font-size: 28px;
+    }
+    
+    .form-group input {
+        padding: 14px 16px;
+        font-size: 16px; /* iOS zoom önleme */
+        min-height: 48px;
+    }
+    
+    /* Chat */
+    .chat-container {
+        flex-direction: column;
+        height: calc(100vh - 60px);
+    }
+    
+    .chat-sidebar {
+        width: 100%;
+        max-height: 200px;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .chat-main {
+        flex: 1;
+        min-height: 0;
+    }
+    
+    .chat-messages {
+        padding: 12px;
+    }
+    
+    .chat-input-container {
+        padding: 12px;
+        gap: 8px;
+    }
+    
+    .chat-input-container input {
+        padding: 12px;
+        font-size: 16px;
+        min-height: 44px;
+    }
+    
+    /* Widgets */
+    .widget {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    
+    /* Hashtag List */
+    .hashtag-item {
+        padding: 12px;
+        min-height: 44px;
+    }
+    
+    /* Suggested Users */
+    .suggested-user {
+        padding: 12px;
+        min-height: 60px;
+    }
+}
+
+/* Extra Small Phones */
+@media (max-width: 360px) {
+    .navbar {
+        padding: 10px 12px;
+    }
+    
+    .navbar-brand {
+        font-size: 16px;
+    }
+    
+    .app-wrapper {
+        padding: 6px;
+    }
+    
+    .post-creator-card,
+    .post-card {
+        padding: 12px;
+    }
+    
+    .profile-header {
+        padding: 20px 12px;
+    }
+    
+    .profile-stats {
+        gap: 16px;
+    }
+    
+    .stat-item strong {
+        font-size: 18px;
+    }
+}
+
+/* Landscape Mode */
+@media (max-width: 768px) and (orientation: landscape) {
+    .navbar {
+        padding: 10px 16px;
+    }
+    
+    .app-wrapper {
+        padding: 12px;
+    }
+    
+    .profile-header {
+        flex-direction: row;
+        text-align: left;
+    }
+    
+    .profile-avatar-large {
+        margin-bottom: 0;
+        margin-right: 20px;
+    }
+    
+    .profile-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .profile-actions .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+}
+
+/* Touch Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    /* Touch devices için */
+    .post-action:hover,
+    .sidebar-item:hover,
+    .hashtag-item:hover {
+        background: transparent;
+    }
+    
+    .post-action:active,
+    .sidebar-item:active,
+    .hashtag-item:active {
+        background: var(--background);
+        transform: scale(0.98);
+    }
+    
+    .btn:active {
+        transform: scale(0.97);
     }
 }
 
